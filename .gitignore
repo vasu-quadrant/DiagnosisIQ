@@ -1,0 +1,12 @@
+/__pycache__
+/exp
+/logs
+exp.ipynb
+exp.py 
+icd_diagnosis_records.csv
+icd_records_6.csv
+icd_records_7.csv
+icd_records_20.csv
+icd_records_21.csv
+icd_records_22.csv
+icd_records.csv

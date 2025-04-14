@@ -125,13 +125,14 @@ def finalize_physician_ouput(embedding_client, physician_agent_ouput_json):
             )
             entity['title_term_matching_score'] = score
 
-            if score > 0.8:
+            if score > 0: # 0.8:
                 entity['Dataframe'] = dataframes_from_tool.get(entity['term'], [])
                 filtered.append(entity)
             else:
                 eliminated.append(entity)
 
-        return {"final_ouput": filtered, "eliminated": eliminated}
+        # return {"final_ouput": filtered, "eliminated": eliminated}
+        return filtered
     except Exception as e:
         logger.exception("Error finalizing physician output: %s", e)
         raise

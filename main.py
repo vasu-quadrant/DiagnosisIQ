@@ -116,7 +116,7 @@ async def upload_file(file: UploadFile = File(...)):
         for page_number, page in enumerate(pages):
             text = pytesseract.image_to_string(page, lang='eng')
             extracted_text += f"\n\n--- Page {page_number + 1} ---\n{text}"
-
+        print(extracted_text)
         soap_json = soap_formatter(project_client, thread, extracted_text, file.filename)
         logger.info("SOAP JSON successfully generated")
         return {"soap": soap_json}
