@@ -1,0 +1,17 @@
+requests
+# azure
+azure-identity
+azure-ai-projects
+azure-ai-inference
+python-dotenv
+PyPDF2
+# azure-mgmt-resources
+openai
+pdf2image
+
+
+fastapi
+uvicorn
+python-multipart
+pandas
+numpy
