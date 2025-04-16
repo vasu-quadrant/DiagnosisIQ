@@ -81,6 +81,12 @@ class SearchInput(BaseModel):
     diagnosis: str
 
 
+import numpy as np
+import pandas as pd
+df = pd.read_csv("all_icd_records.csv")
+df = df.drop_duplicates(subset=['Code'], keep='first')
+
+
 @app.on_event("startup")
 async def startup_event():
     global project_client, thread
@@ -95,7 +101,7 @@ async def startup_event():
     except Exception as e:
         logger.exception("Startup error: %s", str(e))
 
-# ============================================
+# ===========================================
 
 POPPLER_PATH = r"C:\poppler-24.08.0\Library\bin"
 import pytesseract
@@ -116,7 +122,7 @@ async def upload_file(file: UploadFile = File(...)):
         for page_number, page in enumerate(pages):
             text = pytesseract.image_to_string(page, lang='eng')
             extracted_text += f"\n\n--- Page {page_number + 1} ---\n{text}"
-        print(extracted_text)
+
         soap_json = soap_formatter(project_client, thread, extracted_text, file.filename)
         logger.info("SOAP JSON successfully generated")
         return {"soap": soap_json}
@@ -162,3 +168,21 @@ async def search_diagnosis(search_input: SearchInput):
     except Exception as e:
         logger.exception("Search diagnosis error: %s", str(e))
         return JSONResponse(status_code=500, content={"error": "Failed to search diagnosis."})
+
+
+@app.get("/local_search")
+def search_titles(q: str):
+    filtered = df[df['Title'].str.contains(pat= q, case=False, na=False)]
+    print(filtered['Title'])
+    return filtered['Title'].tolist()
+
+
+@app.get("/get_entry")
+def get_entry(title: str):
+    row = df[df['Title'] == title]
+    if row.empty:
+        return JSONResponse(content={}, status_code=404)
+    
+    # Replace NaN and Inf with None
+    row_dict = row.iloc[0].replace({np.nan: None, np.inf: None, -np.inf: None}).to_dict()
+    return JSONResponse(content=row_dict)

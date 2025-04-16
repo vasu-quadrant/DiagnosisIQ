@@ -326,7 +326,7 @@ def call_search_icd_code(diagnosis: str) -> str:
 # print(f"Created agent, ID: {agent.id}")
 
 
-def get_agent_response(project_client, thread, agent_id, context, max_wait_seconds=60, poll_interval=2):
+def get_agent_response(project_client, thread, agent_id, context,  max_wait_seconds=60, poll_interval=2):
     try:
         import time
 
@@ -345,7 +345,11 @@ def get_agent_response(project_client, thread, agent_id, context, max_wait_secon
 
         while iteration < max_iterations:
             logger.info("Agent run iteration %d", iteration)
-            run_status = project_client.agents.create_and_process_run(thread_id=thread.id, agent_id=agent_id)
+            run_status = project_client.agents.create_and_process_run(
+                                                            thread_id=thread.id, 
+                                                            agent_id=agent_id
+                                                            # toolset = toolset
+                                                        )
             if run_status.status == "completed":
                 logger.info("Agent run completed.")
                 break
@@ -399,37 +403,55 @@ def physician_agent(project_client, thread, soap):
 
         agent = project_client.agents.create_agent(
             model="gpt-35-turbo",
-            name="physician-agent",
+            name="physician-agent-2",
             instructions=physician_agent_system_prompt,
             toolset=toolset,
             temperature= 0.1
-        )    
+        )
+
+        # agent = project_client.agents.update_agent(
+        #     agent_id = "asst_FfjQ32fWKHpW087hxf7LOWb0",
+        #     content_type= "application/json",
+        #     model = "gpt-35-turbo",
+        #     name = "My-PS-Agent",
+        #     description= "Physician Agent Process the SOAP and Assign the ICD codes",
+        #     instructions= physician_agent_system_prompt,
+        #     toolset= toolset,
+        #     temperature = 0.1
+        # )   
+        # agent = project_client.agents.get_agent(
+        #     agent_id= "asst_G9txRG1mD8w736vcjVS3533o"   
+        # )
 
         logger.info("Created agent with ID: %s", agent.id)
 
-        physician_response = get_agent_response(project_client, thread, agent.id, physician_agent_context)
+        iteration = 0       # ---
+        while(iteration< 5):
+            logger.info(f"{iteration} Iteration")
+            physician_response = get_agent_response(project_client, thread, agent.id, physician_agent_context)   #, toolset)
 
-        if '```' in physician_response:
-            physician_response = physician_response.split('```')[1].strip()
-            if physician_response[:4]== 'json':
-                physician_response = physician_response[4:].strip()
+            if '```' in physician_response:
+                physician_response = physician_response.split('```')[1].strip()
+                if physician_response[:4]== 'json':
+                    physician_response = physician_response[4:].strip()
 
-        print("="*50)
-        print(physician_response)
-        try:
-            physician_response_json = json.loads(physician_response)
-            project_client.agents.delete_agent(agent.id)
-            logger.info("Ready for Finalizing...")
+            print("="*50)
+            print(physician_response)
+            try:
+                physician_response_json = json.loads(physician_response)
+                project_client.agents.delete_agent(agent.id)
+                logger.info("Ready for Finalizing...")
 
-            finalized_ouput = finalize_physician_ouput(embedding_client, physician_response_json)
-            logger.info("Ready to return Output...")
-            # return finalized_ouput['final_ouput']
+                finalized_ouput = finalize_physician_ouput(embedding_client, physician_response_json)
+                logger.info("Ready to return Output...")
+                # return finalized_ouput['final_ouput']
 
-            return finalized_ouput
+                return finalized_ouput
 
-            # return physician_response_json
-        except Exception as e:
-            logger.exception("Response Formate is not JSON")
+                # return physician_response_json
+            except Exception as e:
+                logger.exception("Response Formate is not JSON, Tring Again")
+                iteration+=1
     except Exception as e:
         logger.exception("Error in physician_agent flow: %s", e)
         raise
